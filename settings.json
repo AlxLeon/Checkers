@@ -1,19 +1,27 @@
 {
-    "WindowSize": {
+    "WindowSize": { // размер окна
+        // 0, 0 означает полный экран 
         "Width": 0,
         "Hight": 0
     },
     "Bot": {
+        // Цвет шашек бота
         "IsWhiteBot": false,
         "IsBlackBot": true,
+        // Уровень бота (0 - 2 is eazy, 3 - 5 medium, 6 - 12 is hard
         "WhiteBotLevel": 0,
         "BlackBotLevel": 5,
+        // Поведение бота "`NumberOnly`" (бот учитывает только количество шашек)  or "`NumberAndPotential`" (бот учитывает количество и расположение шашек). 
         "BotScoringType": "NumberAndPotential",
+        // Задержка перед ходом бота
         "BotDelayMS": 0,
+        // бот будет действовать предсказуемо, без случайности
         "NoRandom": false,
+        // "O0"/"O1"/"O2" Оптимизация веток поиска, чем выше уровень сложности, тем больше требуется оптимизация.
         "Optimization": "O1"
     },
     "Game": {
+        // Максимум ходов до ничьей
         "MaxNumTurns": 120
     }
 }

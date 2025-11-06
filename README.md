@@ -19,7 +19,7 @@ You can set your params in `settings.json`:
 ### Bot
 `IsWhiteBot` - true/false.  
 `IsBlackBot` - true/false.  
-`WhiteBotLevel` - unsigned int. If "IsWhiteBot" is set true then the depth of calculation will be "WhiteBotLevel" + 1. (0 - 2 is eazy, 3 - 5 medium, 6 - 12 is hard. 6+ levels can be slow without "`Optimization`").   
+`WhiteBotLevel` - unsigned int. If "`IsWhiteBot`" is set true then the depth of calculation will be "`WhiteBotLevel`" `+ 1`. (0 - 2 is eazy, 3 - 5 medium, 6 - 12 is hard. 6+ levels can be slow without "`Optimization`").   
 `BlackBotLevel` - unsigned int. If "`IsBlackBot`" is set true then the depth of calculation will be "`BlackBotLevel`" `+ 1`.  
 `BotScoringType` - "`NumberOnly`" (the bot takes into account only the number of checkers)  or "`NumberAndPotential`" (the bot also takes into account the positions of checkers).  
 `BotDelayMS` - unsigned int. Minimum delay per bot move.  
