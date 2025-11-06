@@ -23,10 +23,13 @@ public:
 
   // draws start board
   int start_draw() {
+    // Инициализация SDL2
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
       print_exception("SDL_Init can't init SDL2 lib");
       return 1;
     }
+
+    // Если ширина или высота не заданы, получаем размеры экрана
     if (W == 0 || H == 0) {
       SDL_DisplayMode dm;
       if (SDL_GetDesktopDisplayMode(0, &dm)) {
@@ -35,20 +38,26 @@ public:
         return 1;
       }
       W = min(dm.w, dm.h);
-      W -= W / 15;
+      W -= W / 15; // Уменьшаем на 1/15 для отступов
       H = W;
     }
+
+    // Создание окна с заданными параметрами
     win = SDL_CreateWindow("Checkers", 0, H / 30, W, H, SDL_WINDOW_RESIZABLE);
     if (win == nullptr) {
       print_exception("SDL_CreateWindow can't create window");
       return 1;
     }
+
+    // Создание рендерера с ускорением и вертикальной синхронизацией
     ren = SDL_CreateRenderer(
         win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (ren == nullptr) {
       print_exception("SDL_CreateRenderer can't create renderer");
       return 1;
     }
+
+    // Загрузка текстур для игровых элементов
     board = IMG_LoadTexture(ren, board_path.c_str());
     w_piece = IMG_LoadTexture(ren, piece_white_path.c_str());
     b_piece = IMG_LoadTexture(ren, piece_black_path.c_str());
@@ -56,15 +65,24 @@ public:
     b_queen = IMG_LoadTexture(ren, queen_black_path.c_str());
     back = IMG_LoadTexture(ren, back_path.c_str());
     replay = IMG_LoadTexture(ren, replay_path.c_str());
+
+    // Проверка успешности загрузки всех текстур
     if (!board || !w_piece || !b_piece || !w_queen || !b_queen || !back ||
         !replay) {
       print_exception("IMG_LoadTexture can't load main textures from " +
                       textures_path);
       return 1;
     }
+
+    // Получение фактического размера рендерера
     SDL_GetRendererOutputSize(ren, &W, &H);
+
+    // Создание начальной матрицы состояния доски
     make_start_mtx();
+
+    // Первичная отрисовка доски
     rerender();
+
     return 0;
   }
 
@@ -206,86 +224,100 @@ private:
   // function that re-draw all the textures
   void rerender() {
     // draw board
-    SDL_RenderClear(ren);
-    SDL_RenderCopy(ren, board, NULL, NULL);
+    SDL_RenderClear(ren); // Очищаем экран перед отрисовкой нового кадра
+    SDL_RenderCopy(ren, board, NULL, NULL); // Отображаем игровое поле
 
-    // draw pieces
+    // draw pieces - отрисовка фигур
     for (POS_T i = 0; i < 8; ++i) {
       for (POS_T j = 0; j < 8; ++j) {
-        if (!mtx[i][j])
+        if (!mtx[i][j]) // Если ячейка пуста, пропускаем её
           continue;
-        int wpos = W * (j + 1) / 10 + W / 120;
-        int hpos = H * (i + 1) / 10 + H / 120;
-        SDL_Rect rect{wpos, hpos, W / 12, H / 12};
+        int wpos = W * (j + 1) / 10 + W / 120; // Вычисляем позицию по ширине
+        int hpos = H * (i + 1) / 10 + H / 120; // Вычисляем позицию по высоте
+        SDL_Rect rect{wpos, hpos, W / 12,
+                      H / 12}; // Создаем прямоугольник для фигуры
 
-        SDL_Texture *piece_texture;
-        if (mtx[i][j] == 1)
+        SDL_Texture *piece_texture; // Текстура для отображения фигуры
+        if (mtx[i][j] == 1) // Белая пешка
           piece_texture = w_piece;
-        else if (mtx[i][j] == 2)
+        else if (mtx[i][j] == 2) // Черная пешка
           piece_texture = b_piece;
-        else if (mtx[i][j] == 3)
+        else if (mtx[i][j] == 3) // Белая королева
           piece_texture = w_queen;
-        else
+        else // Черная королева
           piece_texture = b_queen;
 
-        SDL_RenderCopy(ren, piece_texture, NULL, &rect);
+        SDL_RenderCopy(ren, piece_texture, NULL, &rect); // Рисуем фигуру
       }
     }
 
-    // draw hilight
-    SDL_SetRenderDrawColor(ren, 0, 255, 0, 0);
-    const double scale = 2.5;
-    SDL_RenderSetScale(ren, scale, scale);
+    // draw hilight - отрисовка подсветки возможных ходов
+    SDL_SetRenderDrawColor(ren, 0, 255, 0,
+                           0); // Устанавливаем зеленый цвет для подсветки
+    const double scale = 2.5; // Масштаб для корректного отображения подсветки
+    SDL_RenderSetScale(ren, scale, scale); // Применяем масштаб
     for (POS_T i = 0; i < 8; ++i) {
       for (POS_T j = 0; j < 8; ++j) {
-        if (!is_highlighted_[i][j])
+        if (!is_highlighted_[i][j]) // Если клетка не подсвечена, пропускаем её
           continue;
-        SDL_Rect cell{int(W * (j + 1) / 10 / scale),
-                      int(H * (i + 1) / 10 / scale), int(W / 10 / scale),
-                      int(H / 10 / scale)};
-        SDL_RenderDrawRect(ren, &cell);
+        SDL_Rect cell{
+            int(W * (j + 1) / 10 / scale), // Позиция клетки по горизонтали
+            int(H * (i + 1) / 10 / scale), // Позиция клетки по вертикали
+            int(W / 10 / scale),  // Ширина клетки
+            int(H / 10 / scale)}; // Высота клетки
+        SDL_RenderDrawRect(ren, &cell); // Рисуем контур подсвеченной клетки
       }
     }
 
-    // draw active
-    if (active_x != -1) {
-      SDL_SetRenderDrawColor(ren, 255, 0, 0, 0);
-      SDL_Rect active_cell{int(W * (active_y + 1) / 10 / scale),
-                           int(H * (active_x + 1) / 10 / scale),
-                           int(W / 10 / scale), int(H / 10 / scale)};
-      SDL_RenderDrawRect(ren, &active_cell);
+    // draw active - отрисовка активной клетки (выбранной фигуры)
+    if (active_x != -1) { // Если есть выбранная фигура
+      SDL_SetRenderDrawColor(
+          ren, 255, 0, 0, 0); // Устанавливаем красный цвет для активной клетки
+      SDL_Rect active_cell{int(W * (active_y + 1) / 10 /
+                               scale), // Позиция активной клетки по горизонтали
+                           int(H * (active_x + 1) / 10 /
+                               scale), // Позиция активной клетки по вертикали
+                           int(W / 10 / scale), // Ширина активной клетки
+                           int(H / 10 / scale)}; // Высота активной клетки
+      SDL_RenderDrawRect(ren, &active_cell); // Рисуем контур активной клетки
     }
-    SDL_RenderSetScale(ren, 1, 1);
+    SDL_RenderSetScale(ren, 1, 1); // Сбрасываем масштаб обратно к 1:1
 
-    // draw arrows
-    SDL_Rect rect_left{W / 40, H / 40, W / 15, H / 15};
-    SDL_RenderCopy(ren, back, NULL, &rect_left);
-    SDL_Rect replay_rect{W * 109 / 120, H / 40, W / 15, H / 15};
-    SDL_RenderCopy(ren, replay, NULL, &replay_rect);
+    // draw arrows - отрисовка стрелок управления
+    SDL_Rect rect_left{W / 40, H / 40, W / 15,
+                       H / 15}; // Позиция и размер кнопки "назад"
+    SDL_RenderCopy(ren, back, NULL, &rect_left); // Рисуем кнопку "назад"
+    SDL_Rect replay_rect{W * 109 / 120, H / 40, W / 15,
+                         H / 15}; // Позиция и размер кнопки "повтор"
+    SDL_RenderCopy(ren, replay, NULL, &replay_rect); // Рисуем кнопку "повтор"
 
-    // draw result
-    if (game_results != -1) {
-      string result_path = draw_path;
-      if (game_results == 1)
+    // draw result - отрисовка результата игры
+    if (game_results != -1) { // Если игра завершена
+      string result_path = draw_path; // Путь к изображению ничьи по умолчанию
+      if (game_results == 1) // Белые выиграли
         result_path = white_path;
-      else if (game_results == 2)
+      else if (game_results == 2) // Черные выиграли
         result_path = black_path;
-      SDL_Texture *result_texture = IMG_LoadTexture(ren, result_path.c_str());
-      if (result_texture == nullptr) {
+      SDL_Texture *result_texture = IMG_LoadTexture(
+          ren, result_path.c_str()); // Загружаем текстуру результата
+      if (result_texture == nullptr) { // Проверяем успешность загрузки
         print_exception("IMG_LoadTexture can't load game result picture from " +
                         result_path);
         return;
       }
-      SDL_Rect res_rect{W / 5, H * 3 / 10, W * 3 / 5, H * 2 / 5};
-      SDL_RenderCopy(ren, result_texture, NULL, &res_rect);
-      SDL_DestroyTexture(result_texture);
+      SDL_Rect res_rect{W / 5, H * 3 / 10, W * 3 / 5,
+                        H * 2 / 5}; // Позиция и размер окна результата
+      SDL_RenderCopy(ren, result_texture, NULL,
+                     &res_rect); // Отображаем результат
+      SDL_DestroyTexture(
+          result_texture); // Освобождаем память от текстуры результата
     }
 
-    SDL_RenderPresent(ren);
-    // next rows for mac os
-    SDL_Delay(10);
-    SDL_Event windowEvent;
-    SDL_PollEvent(&windowEvent);
+    SDL_RenderPresent(ren); // Отображаем всё на экране
+    // next rows for mac os - задержка для macOS
+    SDL_Delay(10); // Небольшая задержка для стабильной работы на macOS
+    SDL_Event windowEvent; // Переменная для обработки событий окна
+    SDL_PollEvent(&windowEvent); // Опрос событий окна
   }
 
   void print_exception(const string &text) {
